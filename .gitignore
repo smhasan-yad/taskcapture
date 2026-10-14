@@ -22,3 +22,4 @@
 !.env.example
 Thumbs.db
 .DS_Store
+/handoff_journal.md

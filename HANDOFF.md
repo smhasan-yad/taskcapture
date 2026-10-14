@@ -1,6 +1,6 @@
 # Developer handoff
 
-The source is organized as a standalone repository. Operational configuration and local historical notes are ignored; see `private/` only on an authorized local installation. A clone contains no credentials, destination IDs or captured chat history.
+The source is organized as a standalone repository. Operational configuration, the local handoff_journal.md and historical notes are ignored; see `private/` only on an authorized local installation. A clone contains no credentials, destination IDs or captured chat history.
 
 Start with `Initialize-Config.ps1`, then `Test-Offline.ps1`. Core interfaces are in `worker/intake-store.cjs`, `worker/extraction-contract.cjs`, `worker/task-validation.cjs`, `worker/deliver-task.cjs` and `worker/ticktick-client.cjs`. Setup and architecture are documented under `docs/`.
 

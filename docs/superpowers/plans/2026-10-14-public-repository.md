@@ -16,10 +16,10 @@
 - [x] Retain personal history locally; separate private JSON settings from public examples.
 - [x] Provide non-overwriting config initialization, offline test entry point and portable user settings.
 - [x] Write public setup, architecture, troubleshooting, security and handoff documents.
-- [ ] Verify a clean public checkout using examples and synthetic offline tests.
-- [ ] Review the exact staged file manifest and scan it for secrets/private identifiers.
-- [ ] Create the initial clean commit and public repository, then push and verify it.
-- [ ] Verify the installed schedule/shortcut still target the private runtime and that the old source folder is absent.
+- [x] Verify a clean public checkout using examples and synthetic offline tests.
+- [x] Review the exact staged file manifest and scan it for secrets/private identifiers.
+- [x] Create the initial clean commit and public repository, then push and verify it.
+- [x] Verify the installed schedule/shortcut still target the private runtime and that the old source folder is absent.
 
 ## Review focus
 

@@ -53,6 +53,19 @@ Live mode opens a named progress window. Minimize it while it works; closing it 
 
 ## Source and private state
 
-This folder is the source checkout for future Git commits and pushes. The installed runtime lives under `%USERPROFILE%\TaskCaptureState\runtime`; encrypted operational data lives in `%USERPROFILE%\TaskCaptureState`. An absolute `TASKCAPTURE_STATE` override is supported.
+This folder is the source checkout for future Git commits and pushes. The public repository is https://github.com/smhasan-yad/taskcapture. The installed runtime lives under `%USERPROFILE%\TaskCaptureState\runtime`; encrypted operational data lives in `%USERPROFILE%\TaskCaptureState`. An absolute `TASKCAPTURE_STATE` override is supported.
 
 Credentials, OAuth stores, chat data, databases, logs, personal configuration and local historical notes are excluded from the repository. The `private/` folder is local-only. Do not copy private state into the repository or post message bodies in issues.
+
+
+## Development
+
+Clone the repository into your project directory, then work from that checkout:
+
+```powershell
+git clone https://github.com/smhasan-yad/taskcapture.git
+cd taskcapture
+.\Test-Offline.ps1
+```
+
+After reviewing a change, stage it and run `node tools/Check-Public.cjs` to review the exact Git index before committing/pushing. The scan is a useful guard, not a substitute for reviewing diffs. GitHub runs the synthetic offline suite on Windows for pushes and pull requests. Personal `config/*.json` files and `private/` remain untracked.
