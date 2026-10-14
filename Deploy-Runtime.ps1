@@ -16,6 +16,9 @@ $captureFiles+=@(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'worker') -
 $captureFiles+=@(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'config') -File -Filter '*.json' | Where-Object {$_.Name -notlike '*.example.json'} | ForEach-Object {'config\'+$_.Name})
 foreach ($captureFile in $captureFiles) {
  $captureTarget=Join-Path $captureRuntime $captureFile
+ # Runtime discovery and operator settings belong to the installed runtime.
+ # A checkout may contain stale settings or fresh placeholder configuration.
+ if ($captureFile.StartsWith('config\',[StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $captureTarget)) {continue}
  $captureTemp=$captureTarget+'.deploy.tmp'
  Copy-Item -LiteralPath (Join-Path $PSScriptRoot $captureFile) -Destination $captureTemp -Force
  Move-Item -LiteralPath $captureTemp -Destination $captureTarget -Force

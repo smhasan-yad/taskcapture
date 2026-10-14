@@ -39,7 +39,7 @@ node -e "const store=require('./worker/intake-store.cjs').openStore();store.clos
 .\Deploy-Runtime.ps1
 ```
 
-Deployment applies a private Windows ACL to state and copies code plus local configuration into the runtime. It refuses to overwrite an enabled runtime. Review the local files before deploying; examples are not deployed. An absolute `TASKCAPTURE_STATE` can select a different physical state directory.
+Deployment applies a private Windows ACL to state and updates runtime code. Local configuration is copied only when its destination file is missing; existing installed settings, discovered chats and task names are preserved byte for byte. To change an existing installation, edit its private runtime configuration deliberately. Deployment refuses to overwrite an enabled runtime. Review the local files before deploying; examples are not deployed. An absolute `TASKCAPTURE_STATE` can select a different physical state directory.
 
 For an existing installation, keep its encrypted state, personal configuration, task name and schedule. Stop/disable capture deliberately before redeployment; do not register a second task over an existing one. Moving the source checkout does not require redeployment.
 
