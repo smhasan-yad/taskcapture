@@ -1,0 +1,12 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {buildExtractionContract,decodeExtractionResult}=require('../worker/extraction-contract.cjs'),{validateExtraction}=require('../worker/task-validation.cjs');
+const base=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../worker/task-schema.json'),'utf8').replace(/^\uFEFF/,''));
+const batch={processing_target_ids:['source-A','source-a'],messages:[{id:'source-A',text:'Synthetic action',reply_to:'context',context_only:false},{id:'source-a',text:'Synthetic repeated action',context_only:false},{id:'context',text:'Synthetic context',context_only:true}],existing_tasks:[{task_id:'existing'}]};
+const contract=buildExtractionContract(batch,base);assert.deepEqual(contract.modelInput.processing_target_ids,['m1','m2']);assert.equal(contract.modelInput.messages[0].reply_to,'c1');assert.deepEqual(contract.schema.$defs.task.properties.related_source_message_ids.items.enum,['m1','m2']);assert.deepEqual(contract.schema.$defs.task.properties.duplicate_of_task_id.enum,[null,'existing']);
+const task={title:'Synthetic action',description:'Synthetic context',due_at:null,requires_review:false,duplicate_of_task_id:null,related_source_message_ids:['m2']};
+const decoded=decodeExtractionResult({tasks:{m1:task,m2:null}},contract);assert.equal(decoded.tasks.length,1);assert.equal(decoded.tasks[0].source_message_id,'source-A');assert.deepEqual(decoded.tasks[0].related_source_message_ids,['source-a']);validateExtraction(decoded,{targetIds:batch.processing_target_ids});
+for(const bad of [{tasks:[task,task]},{tasks:{m1:task}},{tasks:{m1:task,unknown:null}},{tasks:{m1:{...task,source_message_id:'tampered'},m2:null}},{tasks:{m1:{...task,related_source_message_ids:['c1']},m2:null}}])assert.throws(()=>decodeExtractionResult(bad,contract));
+const conflicting=decodeExtractionResult({tasks:{m1:task,m2:{...task,related_source_message_ids:[]}}},contract);assert.throws(()=>validateExtraction(conflicting,{targetIds:batch.processing_target_ids}));
+assert.deepEqual(decodeExtractionResult({tasks:{m1:null,m2:null}},contract),{tasks:[]});
+assert.throws(()=>buildExtractionContract({...batch,processing_target_ids:['missing']},base));assert.throws(()=>buildExtractionContract({...batch,processing_target_ids:['source-A','source-A']},base));
+console.log('PASS: one nullable model slot per message, short aliases, local durable-ID restoration, related-source merges, context exclusion and strict conflict rejection.');

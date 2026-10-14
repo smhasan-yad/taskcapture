@@ -1,0 +1,62 @@
+{
+  "type": "object",
+  "properties": {
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source_message_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,3})?(?:Z|[+-]\\d\\d:\\d\\d)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "requires_review": {
+            "type": "boolean"
+          },
+          "duplicate_of_task_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "related_source_message_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "source_message_id",
+          "title",
+          "description",
+          "due_at",
+          "requires_review",
+          "duplicate_of_task_id",
+          "related_source_message_ids"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "tasks"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
+const {EventEmitter}=require('node:events'),{PassThrough,Writable}=require('node:stream');
+const state=fs.mkdtempSync(path.join(os.tmpdir(),'capture-protocol-errors-'));process.env.TASKCAPTURE_STATE=state;
+const {TickTickClient}=require('../worker/ticktick-client.cjs');
+function fake(mode){return ()=>{const child=new EventEmitter();child.stdout=new PassThrough();child.stderr=new PassThrough();child.kill=()=>{};
+child.stdin=new Writable({write(chunk,encoding,done){const request=JSON.parse(chunk.toString());if(request.id===undefined){done();return;}
+if(mode==='pipe'){queueMicrotask(()=>child.stdin.emit('error',Object.assign(Error('SECRET'),{code:'EPIPE'})));done();return;}
+if(mode==='exit'){queueMicrotask(()=>child.emit('exit',1));done();return;}
+let result;if(request.method==='initialize')result={};else if(request.method==='mcpServerStatus/list')result={data:[{name:'ticktick',authStatus:'oAuth',tools:Object.fromEntries(['list_projects','create_task','update_task','get_project_with_undone_tasks'].map(n=>[n,{}]))}]};else if(request.method==='thread/start'){done();return;}
+queueMicrotask(()=>child.stdout.write(JSON.stringify({id:request.id,result})+'\n'));done();}});return child;};}
+(async()=>{try{for(const [mode,code,operation] of [['timeout','ticktick_timeout','thread/start'],['pipe','ticktick_pipe_failed','initialize'],['exit','ticktick_connector_stopped','initialize']]){const client=new TickTickClient({spawnProcess:fake(mode),requestTimeoutMs:20});try{await assert.rejects(()=>client.start(),error=>error.code===code&&error.operation===operation);assert.equal(client.pending.size,0);if(mode!=='timeout')await assert.rejects(()=>client.rpc('model/list',{}),e=>e.code==='ticktick_connector_stopped');}finally{client.close();}}console.log('PASS: mocked connector identifies timeout operation, handles stdin EPIPE/exit, clears requests and rejects calls after closure. No live calls.');}finally{if(path.dirname(state)!==path.resolve(os.tmpdir()))throw Error('Cleanup escaped temp root');fs.rmSync(state,{recursive:true,force:true});}})().catch(()=>{console.error('Offline protocol failure test failed');process.exitCode=1;});

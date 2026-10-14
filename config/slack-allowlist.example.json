@@ -1,0 +1,11 @@
+{
+  "enabled": false,
+  "privacy_confirmed_by_user": false,
+  "contains_confidential_clinical_information": false,
+  "channels": [],
+  "selection_mode": "all_chats_active_last_7_days",
+  "include_direct_messages": true,
+  "all_chats_authorized_by_user": false,
+  "scope_days": 7,
+  "connection": "beeper_desktop"
+}

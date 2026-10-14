@@ -1,0 +1,13 @@
+{
+  "name": "taskcapture",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Windows chat task capture from Beeper to TickTick with subscription-backed extraction",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "test": "powershell.exe -NoProfile -NonInteractive -File ./Test-Offline.ps1",
+    "check": "node tools/Check-Extraction.cjs"
+  }
+}

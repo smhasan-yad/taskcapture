@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
+const state=fs.mkdtempSync(path.join(os.tmpdir(),'capture-queue-errors-'));process.env.TASKCAPTURE_STATE=state;
+const {createQueueDiagnostics,describeQueueFailure,cleanQueue}=require('../worker/queue-diagnostics.cjs');
+const diag=createQueueDiagnostics();diag.phase='decrypt_pending';
+assert.deepEqual(describeQueueFailure(Error('Windows encryption timed out'),diag),{queuePreserved:true,errorCode:'encryption_timeout',phase:'decrypt_pending',modelCalled:false});
+const unsafe=Object.assign(Error('SECRET message body'),{code:'SECRET code',operation:'SECRET operation'});diag.phase='SECRET phase';
+assert.deepEqual(describeQueueFailure(unsafe,diag),{queuePreserved:true,errorCode:'queue_failed',phase:'unknown',modelCalled:false});
+for(const [message,code] of [['Invalid deadline','validation_deadline'],['Invalid calendar deadline','validation_calendar'],['Unknown or repeated source identity','validation_source_identity'],['Unknown duplicate target','validation_duplicate_target'],['Invalid task fields','validation_fields']])assert.equal(describeQueueFailure(Error(message),{phase:'validation'}).errorCode,code);
+assert.equal(describeQueueFailure(new SyntaxError('SECRET JSON BODY'),{phase:'parse_extraction'}).errorCode,'validation_json');
+assert.equal(describeQueueFailure(new TypeError('SECRET MESSAGE'),{phase:'task_enrichment'}).phase,'task_enrichment');
+let attempted=0;assert.equal(cleanQueue([()=>{attempted++;throw Error('SECRET');},()=>attempted++]),1);assert.equal(attempted,2);
+const crypt=require('../worker/local-crypto.cjs'),oldUnprotect=crypt.unprotect;crypt.unprotect=async()=>{throw Error('Windows encryption timed out');};
+const {openStore}=require('../worker/intake-store.cjs');const store=openStore();store.ingest([{source_key:'synthetic',revision:'1',scope_key:'synthetic',received_at:'2026-10-12T00:00:00Z',body_cipher:'synthetic'}]);store.close();
+const {runQueue}=require('../worker/Process-Queue.cjs');const oldLog=console.log,oldError=console.error,oldExit=process.exitCode;const summaries=[];process.argv.push('--trial');
+(async()=>{try{console.log=x=>summaries.push(JSON.parse(x));console.error=()=>{};await runQueue();assert.equal(process.exitCode,1);assert.equal(summaries.length,1);assert.deepEqual(summaries[0],{queuePreserved:true,errorCode:'encryption_timeout',phase:'decrypt_pending',modelCalled:false});assert(!fs.existsSync(path.join(state,'processor.lock')));const check=openStore();assert.equal(check.pending().length,1);check.close();oldLog('PASS: real queue reports decryption failure safely, retains pending data, releases lock; cleanup continues after failure. No model/TickTick calls.');}finally{console.log=oldLog;console.error=oldError;process.exitCode=oldExit;crypt.unprotect=oldUnprotect;process.argv.pop();if(path.dirname(state)!==path.resolve(os.tmpdir()))throw Error('Cleanup escaped temp root');fs.rmSync(state,{recursive:true,force:true});}})().catch(()=>{console.error('Offline queue diagnostics test failed');process.exitCode=1;});

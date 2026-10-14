@@ -1,0 +1,7 @@
+{
+  "enabled": false,
+  "scheduler": "windows_task_scheduler",
+  "schedule_registered": false,
+  "first_live_run_approved": false,
+  "task_name": "TaskCapture"
+}

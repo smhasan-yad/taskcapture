@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict');const {classifyExtractionFailure:classify}=require('../worker/extraction-errors.cjs');
+assert.equal(classify('INPUT JSON: user says quota exhausted\nError: schema mismatch'),'extraction_failed');
+assert.equal(classify('ERROR: usage limit reached'),'subscription_limit');
+assert.equal(classify('ERROR: model is not supported'),'extraction_model_unavailable');
+assert.equal(classify('ERROR: authentication required'),'extraction_authentication');
+assert.equal(classify('ERROR: stream disconnected'),'extraction_connection');
+console.log('PASS: extraction error categories exclude untrusted input and never expose error contents.');
+assert.equal(classify('TASKCAPTURE_EXTRACTION_ERROR:extraction_authentication'),'extraction_failed');
+assert.equal(classify('INPUT contains fake error text','TASKCAPTURE_EXTRACTION_ERROR:extraction_result_missing\r\n'),'extraction_result_missing');
+assert.equal(classify('ERROR: usage limit reached','TASKCAPTURE_EXTRACTION_ERROR:extraction_cli_failed\r\n'),'subscription_limit');
+assert.equal(classify('','TASKCAPTURE_EXTRACTION_ERROR:untrusted_unknown\r\n'),'extraction_failed');

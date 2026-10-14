@@ -1,0 +1,11 @@
+// Review the exact Git index, never credentials or captured chat state.
+const fs=require('node:fs'),path=require('node:path'),{spawnSync}=require('node:child_process');
+const root=path.resolve(__dirname,'..');
+function git(args){const r=spawnSync('git',['-C',root,...args],{encoding:'utf8',windowsHide:true,maxBuffer:8*1024*1024});if(r.status!==0)throw Error('Git index inspection failed');return r.stdout;}
+const personal=[];
+function visit(value){if(!value||typeof value!=='object')return;for(const [key,item] of Object.entries(value)){if(/^(?:project_id|setup_test_task_id|workspace_id|workspace_name|account_id)$/.test(key)&&typeof item==='string'&&item.length>=6&&!item.startsWith('YOUR_'))personal.push(item);else if(item&&typeof item==='object')visit(item);}}
+for(const name of ['ticktick-destination','slack-allowlist','whatsapp-allowlist']){const file=path.join(root,'config',name+'.json');if(fs.existsSync(file))visit(JSON.parse(fs.readFileSync(file,'utf8').replace(/^\uFEFF/,'')));}
+const rules=[['credential',/\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-(?:proj-|ant-)?[A-Za-z0-9_-]{20,})\b/],['private_key',/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/],['personal_email',/[A-Za-z0-9._%+-]+@(?:gmail|hotmail|outlook|yahoo)\.[A-Za-z]+/],['personal_windows_path',/\b[A-Za-z]:[\\/]+Users[\\/]+(?!Public\b|Default\b|<|YOUR_)[^\\/\s"']+/],['personal_drive_path',/\b[A-Za-z]:[\\/]+My Drive[\\/]/]];
+try{const files=git(['ls-files','--cached','-z']).split('\0').filter(Boolean),findings=[];for(const file of files){if(/^(?:private|runtime|state|logs|temporary)\//.test(file)||(/^config\/.*\.json$/.test(file)&&!file.endsWith('.example.json'))||/\.(?:dpapi|sqlite(?:-[a-z]+)?|db|log|pem|key|pfx|zip)$/.test(file)){findings.push({file,rule:'private_file'});continue;}const content=git(['show',':'+file]);for(const [rule,pattern] of rules)if(pattern.test(content))findings.push({file,rule});if(personal.some(value=>content.includes(value)))findings.push({file,rule:'private_config_identifier'});}
+console.log(JSON.stringify({filesReviewed:files.length,findings}));if(findings.length)process.exitCode=1;
+}catch{console.error('Public index review could not complete.');process.exitCode=1;}

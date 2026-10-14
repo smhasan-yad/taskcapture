@@ -1,0 +1,13 @@
+{
+  "enabled": false,
+  "user_name": "Your Name",
+  "candidate_mode": "intelligent",
+  "connection": "official_ticktick_mcp_via_codex_oauth",
+  "project_id": "YOUR_TICKTICK_PROJECT_ID",
+  "project_name": "AI Tasks",
+  "name_aliases": [
+    "Your Name"
+  ],
+  "extraction_model": "gpt-6-sol",
+  "reasoning_effort": "low"
+}

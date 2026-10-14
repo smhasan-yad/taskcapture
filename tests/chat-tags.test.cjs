@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict');const {chatLabel,taskTitle,stripLabel,tagContent}=require('../worker/task-labels.cjs');
+const w={platform:'whatsapp',group:'Example Team - ExampleProject'},s={platform:'slack',source_group:'#example-ops'};
+assert.equal(chatLabel([w]),'[Example Team]');const first=taskTitle([w],'[Review] Check synthetic issue');assert.equal(first,'[W] [Example Team] [Review] Check synthetic issue');
+const content=tagContent('Synthetic description\nTaskCapture source synthetic',[w]);assert.equal(stripLabel(first,content),'[Review] Check synthetic issue');assert.equal(tagContent(content,[w]),content);
+const changed=taskTitle([w,s],stripLabel(first,content));assert.equal(changed,'[W and S] [Example Team · #example-ops] [Review] Check synthetic issue');
+assert.equal(stripLabel('[W] [Urgent] Synthetic action',''), '[Urgent] Synthetic action');
+assert(chatLabel([w,s,{platform:'slack',group:'Synthetic DM'}]).endsWith('+1]'));
+assert(!chatLabel([{group:'bad\n[name]'}]).includes('\n'));assert(taskTitle([w,s],'x'.repeat(480)).length<=480);
+const longA={group:'Synthetic very very very long name A'},longB={group:'Synthetic very very very long name B'};assert(chatLabel([longA,longB]).match(/[a-f0-9]{4}/));
+console.log('PASS: concise chat tags, multi-chat provenance, owned-prefix replacement, review/user-prefix preservation, collision disambiguation and idempotent metadata.');

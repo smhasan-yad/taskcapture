@@ -1,0 +1,9 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');const {openStore}=require('../worker/intake-store.cjs');const {refreshTags}=require('../worker/Refresh-Chat-Tags.cjs');
+(async()=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'capture-tags-refresh-test-')),store=openStore(path.join(dir,'test.sqlite'));try{
+ store.bindSource('w','task','whatsapp','Synthetic DM','2026-10-10T10:00:00Z');store.bindSource('reference','ref','whatsapp','Synthetic DM','2026-10-10T10:00:00Z');
+ const tasks=[{id:'task',title:'[W] [Review] Synthetic request',content:'TaskCapture source w',projectId:'p'},{id:'ref',title:'Source acknowledgement',content:'TaskCapture source reference\nTaskCapture reference only',projectId:'p'},{id:'user',title:'User task',content:'User content'}];let updates=0;
+ const client={listTasks:async()=>tasks.map(t=>({...t})),call:async(tool,args)=>{assert.equal(tool,'update_task');updates++;Object.assign(tasks.find(t=>t.id===args.task_id),args.task);return {};}};
+ const first=await refreshTags(store,client,'p');assert.equal(first.updated,1);assert.equal(first.verified,1);assert.equal(first.failed,0);assert.equal(first.created,0);assert.equal(first.deleted,0);assert.equal(tasks[0].title,'[W] [Synthetic DM] [Review] Synthetic request');assert.equal(tasks[1].title,'Source acknowledgement');assert.equal(tasks[2].title,'User task');
+ const second=await refreshTags(store,client,'p');assert.equal(second.updated,0);assert.equal(updates,1);
+ console.log('PASS: existing chat-tag refresh is update-only, excludes acknowledgement references/unmanaged tasks, preserves Review and repeats without writes.');
+ }finally{store.close();for(const f of fs.readdirSync(dir))fs.unlinkSync(path.join(dir,f));fs.rmdirSync(dir);}})().catch(()=>{console.error('Offline existing chat-tag refresh failed');process.exitCode=1;});
